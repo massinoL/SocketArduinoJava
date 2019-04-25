@@ -1,0 +1,61 @@
+
+
+import java.net.*;
+import java.sql.*;
+import java.util.Calendar;
+
+public class SocketServer {
+    public static void main(String[] args) throws Exception {
+    	
+    	
+    	ConnectBDD cc=new ConnectBDD();
+        Connection conn = DriverManager.getConnection(cc.url,cc.user,cc.passwd);
+        float f =0;
+        float f2=0;
+        String leString="";
+            int c=0;
+            Calendar calendar = Calendar.getInstance();
+            java.sql.Time Dateval = new java.sql.Time(calendar.getTime().getTime());
+            
+            DatagramSocket serverSocket = new DatagramSocket(8888);
+            byte[] receiveData = new byte[1024];
+            byte[] sendData = new byte[1024];
+            while(true)
+               {
+                  
+                  DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
+                  serverSocket.receive(receivePacket);
+                  String sentence = new String( receivePacket.getData()); 
+                  System.out.println("RECEIVED: " + sentence);
+                 
+                  f= Float.parseFloat(sentence);
+                  
+                  leString=String.valueOf(f);
+                  System.out.println("le sss "+leString);
+                //insertion dans la base de donnee
+                  if (leString!="-9.99") {
+                  String query = "INSERT INTO TEMP(ID, VALEUR, HEURE)"
+                          + " VALUES (?,?,?)";
+                  PreparedStatement preparedStmt = conn.prepareStatement(query);
+                  preparedStmt.setInt(1, c);
+                  preparedStmt.setString(2,leString);
+                  preparedStmt.setTime(3, Dateval);
+                  preparedStmt.execute();
+                 System.out.println("donnéé inséré dans la base de donnée");
+                  }
+                 
+                  InetAddress IPAddress = receivePacket.getAddress();
+                  int port = receivePacket.getPort();
+                  String capitalizedSentence = sentence.toUpperCase();
+                 
+                  sendData = capitalizedSentence.getBytes();
+                  DatagramPacket sendPacket =
+                  new DatagramPacket(sendData, sendData.length, IPAddress, port);
+                  serverSocket.send(sendPacket);
+                  c++;
+                  System.out.println(c);
+                 
+               }
+    }
+   
+}
